@@ -129,6 +129,31 @@ void dfs(grafo g, vertice n, int *visited) {
             dfs(g, neighbour, visited);
     }   
 } //FINALIZADO
+
+
+
+
+
+grafo componentes(grafo g) {
+    char state[10] = "state";
+    char component[10] = "component";
+    char value[2] = "0";
+    
+    vertice v;
+    for (v = agfstnode(g); v; v = agnxtnode(g,v)) {
+        agset(v, state, value);
+        agset(v, component, value);
+    }
+
+    int components = 0;
+    for (v = agfstnode(g); v; v = agnxtnode(g,v)) {
+        agset(v, state, value);
+        agset(v, component, value);
+    }
+
+}
+
+
 //------------------------------------------------------------------------------
 
 
@@ -352,8 +377,17 @@ grafo complemento(grafo g) {
     return comp;
 } //FINALIZADO
 
-
 // -----------------------------------------------------------------------------
 grafo decompoe(grafo g) {
+    if (agisdirected(g)) {
+        char name[10] = "Copy";
+        grafo copy = copy_graph(g, name, 1);
+
+
+
+    }
+
+
+    
     return g;
 }
