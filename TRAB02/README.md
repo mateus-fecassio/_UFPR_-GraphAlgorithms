@@ -1,7 +1,7 @@
 # Trabalho de Implementação 2 - Biblioteca de Análise de Grafos
 O objetivo deste trabalho foi o de complementar o trabalho anterior sobre uma biblioteca básica para análise de grafos com a função para detectar os componentes fortes de um grafo direcionado.
 A seguinte função foi implementada:
-- decompoe : acrescenta à lista de subgrafos de g cada um de seus componentes fortes.
+- decompoe : acrescenta à lista de subgrafos de g cada um de seus componentes fortes. Essa função foi implementada baseando-se no Algoritmo de Kosaraju. É importante ressaltar que a saída do grafo resultante não considera repetição das arestas que estão em algum subgrafo de g. Para observar essa repetição de arestas, a linha 547 deve ser descomentada. Ainda, a informação de estado, índices de pré e pós ordem e componente estão sinalizadas nos atributos de cada um dos vértices.
 
 
 ## Dependências
@@ -15,7 +15,10 @@ Em particular, nas distribuições de GNU/Linux baseadas na distribuição Debia
 
 
 ## Obsevações Complementares
-Ao longo do desenvolvimento deste trabalho, algumas funções foram desenvolvidas com o intuito de compor as principais funções que deveriam ser implementadas. São elas:
+Ao longo do desenvolvimento deste trabalho, algumas funções foram desenvolvidas com o intuito de compor a principal função que deveria ser implementada. São elas:
+- buscaProfundidade : esse algoritmo faz uma busca em profundidade no grafo dado, retornando o inverso do índice de pós-ordem que é utilizado em uma das etapas do Algoritmo de Kosaraju. Aqui foi considerado que o inverso de uma pós-ordem em G é equivalente a uma pós-ordem em Gt, onde Gt é o grafo transposto a G;
+- profundidade : versão recursiva que é chamada pela função buscaProfundidade;
+- decompor : versão recursiva que é utilizada na chamada da função decompoe.
 
 
 ## AUTOR

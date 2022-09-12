@@ -13,7 +13,12 @@ int coloreGrafo(int size, int **G, int *color, int pos, int c);
 grafo copy_graph(grafo g, char *name, int edges);
 void dfs(grafo g, vertice n, int *visited);
 
-// FUNÇÕES AUXILIARES
+void profundidade(grafo g, vertice r, int *t, Agnode_t **order, int *index);
+Agnode_t** buscaProfundidade(grafo g);
+void decompor(grafo g, vertice r, int c);
+
+
+// IMPLEMENTAÇÕES - FUNÇÕES AUXILIARES
 int **aloca_matriz(int size) {
     int **matriz = (int**) malloc((size_t) size * sizeof(int*));
 
@@ -91,7 +96,6 @@ grafo copy_graph(grafo g, char *name, int edges) {
     grafo comp;
     comp = agopen(name, type, NULL);
 
-
     // adiciona os vértices
     vertice v;
     for (v = agfstnode(g); v; v = agnxtnode(g,v)) {
@@ -130,29 +134,117 @@ void dfs(grafo g, vertice n, int *visited) {
     }   
 } //FINALIZADO
 
-
-
-
-
-grafo componentes(grafo g) {
+void profundidade(grafo g, vertice r, int *t, Agnode_t **order, int *index) {
+    char temp[10];
     char state[10] = "state";
-    char component[10] = "component";
-    char value[2] = "0";
-    
+    char pre[10] = "pre";
+    char pos[10] = "pos";
+
+    char value[10] = "0";
+
+    // r.pre <- ++t
+    (*t)++;
+    sprintf(temp, "%d", (*t));
+    agset(r, pre, temp);
+    temp[0] = '\0'; // limpa a string
+
+    // r.state <- 1
+    sprintf(temp, "%d", 1);
+    agset(r, state, temp); 
+    temp[0] = '\0'; // limpa a string
+
+
+    // para cada v E V(G)
     vertice v;
-    for (v = agfstnode(g); v; v = agnxtnode(g,v)) {
-        agset(v, state, value);
-        agset(v, component, value);
+    for (Agedge_t *ed = agfstout(g,r); ed; ed = agnxtout(g,ed)) {
+        v = aghead(ed); // para cada v E vizinhança(r) , O -> X
+        char *v_state = agget(v, state);
+
+        if (!strcmp(v_state, value)) { //se v.estado = 0
+            profundidade(g, v, t, order, index);
+        }
     }
 
-    int components = 0;
+    // r.state <- 2
+    sprintf(temp, "%d", 2);
+    agset(r, state, temp); 
+    temp[0] = '\0'; // limpa a string
+
+
+    // r.pos <- ++t
+    (*t)++;
+    sprintf(temp, "%d", (*t));
+    agset(r, pos, temp);
+    temp[0] = '\0'; // limpa a string
+
+    order[(*index)] = r;
+    (*index)--;
+} //FINALIZADO
+
+Agnode_t** buscaProfundidade(grafo g) {
+    char state[10] = "state";
+    char pre[10] = "pre";
+    char pos[10] = "pos";
+
+    char value[10] = "0";
+
+    vertice v;
+
+    int index = n_vertices(g);
+    Agnode_t **order = (Agnode_t **) malloc((size_t) index * sizeof(Agnode_t *));
+
+    index --;
+    
+    // para cada v E V(G)
+    agattr(g,AGNODE,state,value); // v.estado <- 0
+    agattr(g,AGNODE,pre,value); // v.pre <- 0
+    agattr(g,AGNODE,pos,value); // v.pos <- 0
+
+    // para cada v E V(G)
+    int t = 0;
     for (v = agfstnode(g); v; v = agnxtnode(g,v)) {
-        agset(v, state, value);
-        agset(v, component, value);
+        char *v_state = agget(v, state);
+        if (!strcmp(v_state, value)) { //se v.estado = 0
+            profundidade(g, v, &t, order, &index);
+        }
     }
 
-}
+    return order;
+} //FINALIZADO
 
+void decompor(grafo g, vertice r, int c) {
+    char temp[10];
+    char state[10] = "state";
+    char comp[10] = "comp";
+
+    char value[10] = "0";
+
+    // r.state <- 1
+    sprintf(temp, "%d", 1);
+    agset(r, state, temp); 
+    temp[0] = '\0'; // limpa a string
+
+    // para cada v E vizinhanca(r)
+    vertice v;
+    for (Agedge_t *ed = agfstin(g,r); ed; ed = agnxtin(g,ed)) {
+        v = agtail(ed); 
+        char *v_state = agget(v, state);
+
+        if (!strcmp(v_state, value)) { //se v.estado = 0
+            decompor(g,v,c);
+        }
+    }
+
+    // r.state <- 2
+    sprintf(temp, "%d", 2);
+    agset(r, state, temp); 
+    temp[0] = '\0'; // limpa a string
+
+    // r.comp <- c
+    sprintf(temp, "%d", c);
+    agset(r, comp, temp);
+    temp[0] = '\0'; // limpa a string
+} //FINALIZADO
 
 //------------------------------------------------------------------------------
 
@@ -180,7 +272,8 @@ void destroi_grafo(grafo g) {
 
 //------------------------------------------------------------------------------
 grafo escreve_grafo(grafo g) {
-    agwrite(g, stdout);
+    if (g)
+        agwrite(g, stdout);
     return g;
 } //FINALIZADO
 
@@ -380,14 +473,83 @@ grafo complemento(grafo g) {
 // -----------------------------------------------------------------------------
 grafo decompoe(grafo g) {
     if (agisdirected(g)) {
-        char name[10] = "Copy";
-        grafo copy = copy_graph(g, name, 1);
+        char temp[10];
+        char state[10] = "state";
+        char components[12] = "components";
+        char comp[10] = "comp";
+        char value[10] = "0";
+
+        agattr(g,AGRAPH,components,value); // g.components <- 0
+
+        Agnode_t **order = buscaProfundidade(g); //vetor de vertices no inverso da pos-ordem
+        // printf("pos ordem invertida:\n");
+        // for (int i=0; i < n_vertices(g); ++i)
+        //     printf("%s",agnameof(order[i]));
+
+        // para cada v E V(G)
+        vertice v;
+        agattr(g,AGNODE,comp,value); // v.comp <- 0
+        for (v = agfstnode(g); v; v = agnxtnode(g,v)) {
+            agset(v, state, value); // v.estado <- 0
+        }
+
+        int c = 0;
+        for (int i=0; i < n_vertices(g); ++i) {
+            v = order[i];
+            char *v_state = agget(v, state);
+
+            if (!strcmp(v_state, value)) { //se v.estado = 0
+                decompor(g,v,++c);
+
+                // r.comp <- c
+                sprintf(temp, "%d", c);
+                agset(g, components, temp);
+                temp[0] = '\0'; // limpa a string
+            }
+        }
+        // printf("TOTAL DE COMPONENTES = %d\n", c);
+
+        // ------- ADICIONA OS SUGRAFOS A g
+        // para cada um dos componentes
+        grafo h;
+        char *r_comp;
+        char *v_comp;
+        for (int i = 1; i <= c; ++i) {
+            temp[0] = '\0';
+            char name[20] = "component_"; 
+
+            sprintf(temp, "%d", i);
+
+            // cria o subgrafo do componente i
+            strcat(name, temp);
+            h = agsubg(g,name,TRUE);
 
 
+            // adiciona os vertices
+            vertice r;
+            for (r = agfstnode(g); r; r = agnxtnode(g,r)) {
+                r_comp = agget(r, comp);
+                if (!strcmp(r_comp, temp)) {
+                    agsubnode(h, r, TRUE);
+                }
+            }
 
+
+            //adiciona as arestas
+            for (r = agfstnode(g); r; r = agnxtnode(g,r)) {
+                r_comp = agget(r, comp);
+                for (v = agfstnode(g); v; v = agnxtnode(g,v)) {
+                    v_comp = agget(v, comp);
+                    
+                    if (!strcmp(r_comp, temp) && !strcmp(v_comp, temp)) { // se r e v pertencem a um mesmo componente
+                        if (agedge(g,r,v,NULL,FALSE)) { // se existe um arco entre r e v
+                            agsubedge(h, agedge(g,r,v,NULL,FALSE), TRUE);
+                            // agedge(g,r,v,NULL,TRUE); // evita arestas "repetidas" em g. ao descomentar essa linha é possível observar essas arestas
+                        }    
+                    }
+                }
+            }
+        }
     }
-
-
-    
     return g;
 }
